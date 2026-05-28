@@ -1,0 +1,19 @@
+# FVD covered universe — one ticker per line, # comments allowed
+# Edit this list to add/remove names; the nightly job picks it up automatically.
+MA
+V
+AAPL
+MSFT
+GOOGL
+META
+AMZN
+NVDA
+JPM
+JNJ
+XOM
+KO
+# Add additional tickers below as you expand coverage:
+# BAC
+# PG
+# WMT
+# TSLA

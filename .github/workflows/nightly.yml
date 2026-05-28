@@ -1,0 +1,49 @@
+name: FVD SEC Fundamentals Nightly Batch
+
+# Runs every night at 06:30 UTC (after most US filings settle).
+# Pulls SEC EDGAR XBRL companyfacts for every ticker in tickers.txt,
+# extracts the canonical fundamentals the dashboard cares about,
+# and publishes a single JSON artifact to a CDN-cached URL.
+#
+# Why: SEC EDGAR requires a User-Agent header and is CORS-blocked from
+# the browser. By pre-baking the data server-side, the dashboard always
+# has fresh primary-filings data with zero browser-side SEC calls.
+
+on:
+  schedule:
+    - cron: '30 6 * * *'     # 06:30 UTC every day
+  workflow_dispatch:          # also runnable manually from Actions tab
+
+permissions:
+  contents: write             # to push the generated JSON back to the repo
+
+jobs:
+  batch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Pull SEC fundamentals
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}      # e.g. "FVD/1.0 you@email.com" — required by SEC
+        run: python scripts/pull_sec_fundamentals.py tickers.txt data/fundamentals.json
+
+      - name: Commit and push the bundle
+        run: |
+          git config user.name  "fvd-bot"
+          git config user.email "fvd-bot@users.noreply.github.com"
+          git add data/fundamentals.json
+          if git diff --staged --quiet; then
+            echo "No fundamentals change tonight."
+            exit 0
+          fi
+          git commit -m "fvd: nightly SEC fundamentals refresh ($(date -u +%Y-%m-%d))"
+          git push
