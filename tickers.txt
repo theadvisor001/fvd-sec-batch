@@ -12,8 +12,15 @@ JPM
 JNJ
 XOM
 KO
-# Add additional tickers below as you expand coverage:
-# BAC
-# PG
-# WMT
-# TSLA
+ADBE
+CRM
+NFLX
+TSLA
+BAC
+PG
+WMT
+HD
+UNH
+LLY
+CVX
+AVGO
