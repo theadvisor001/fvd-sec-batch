@@ -29,10 +29,21 @@ Schema (one entry per ticker):
             "ResearchAndDevelopmentExpense":[...]
         },
         "derived": {
-            "fcf_ttm_usd":     ...,
-            "net_debt_usd":    ...,
-            "book_value_per_share": ...,
-            "rev_5y_cagr_pct": ...
+            "fcf_ttm_usd":                  ...,
+            "cfo_usd":                      ...,
+            "capex_usd":                    ...,
+            "net_debt_usd":                 ...,
+            "adj_net_debt_usd":             ...,
+            "total_debt_usd":               ...,
+            "cash_usd":                     ...,
+            "book_value_per_share":         ...,
+            "tangible_book_value_per_share":...,
+            "working_capital_usd":          ...,
+            "current_ratio":                ...,
+            "ebitda_usd":                   ...,
+            "interest_coverage":            ...,
+            "effective_tax_rate_pct":       ...,
+            "rev_5y_cagr_pct":              ...
         }
     },
     ...
@@ -60,22 +71,37 @@ HEADERS = {"User-Agent": SEC_UA, "Accept-Encoding": "gzip, deflate"}
 
 # Concepts to extract from XBRL companyfacts (us-gaap taxonomy)
 GAAP_CONCEPTS = [
+    # ── Income statement ──────────────────────────────────────────
     "Revenues",
     "RevenueFromContractWithCustomerExcludingAssessedTax",  # newer name
     "NetIncomeLoss",
     "OperatingIncomeLoss",
     "GrossProfit",
     "ResearchAndDevelopmentExpense",
+    "InterestExpense",
+    "IncomeTaxExpenseBenefit",
+    "DepreciationDepletionAndAmortization",
+    "ShareBasedCompensation",
+    # ── Balance sheet ─────────────────────────────────────────────
     "CashAndCashEquivalentsAtCarryingValue",
+    "ShortTermInvestments",
+    "AssetsCurrent",
+    "Assets",
+    "Goodwill",
+    "IntangibleAssetsNetExcludingGoodwill",
+    "LiabilitiesCurrent",
+    "Liabilities",
     "LongTermDebtNoncurrent",
     "LongTermDebt",
+    "LongTermDebtCurrent",
+    "OperatingLeaseLiabilityNoncurrent",
     "StockholdersEquity",
-    "Assets",
-    "Liabilities",
+    # ── Per-share & shares ─────────────────────────────────────────
     "EarningsPerShareDiluted",
     "EarningsPerShareBasic",
     "CommonStockSharesOutstanding",
     "WeightedAverageNumberOfDilutedSharesOutstanding",
+    # ── Cash flow ─────────────────────────────────────────────────
     "NetCashProvidedByUsedInOperatingActivities",
     "PaymentsToAcquirePropertyPlantAndEquipment",
 ]
@@ -142,35 +168,123 @@ def extract_series(facts: dict, concept: str, unit: str = "USD") -> list:
     return cleaned[:20]  # at most 5 years × 4 quarters
 
 
+def _v(series: list, idx: int = 0) -> float | None:
+    """Return the numeric value at series[idx], or None if missing/zero."""
+    if not series or idx >= len(series):
+        return None
+    val = series[idx].get("val")
+    return float(val) if val is not None and val == val else None  # guard NaN
+
+
 def derive_metrics(fundamentals: dict) -> dict:
-    """Compute the small set of derived metrics the dashboard wants."""
+    """Compute enriched derived metrics the dashboard consumes.
+
+    v39 additions: EBITDA, interest coverage, effective tax rate,
+    tangible book value per share, working capital, current ratio,
+    adjusted (net) debt including lease liabilities.
+    """
     derived = {}
-    cfo_series = fundamentals.get("NetCashProvidedByUsedInOperatingActivities", [])
-    capex_series = fundamentals.get("PaymentsToAcquirePropertyPlantAndEquipment", [])
-    if cfo_series and capex_series:
-        latest_cfo = cfo_series[0].get("val") or 0
-        latest_capex = capex_series[0].get("val") or 0
-        derived["fcf_ttm_usd"] = latest_cfo - latest_capex
-    debt = (fundamentals.get("LongTermDebt", [])
-            or fundamentals.get("LongTermDebtNoncurrent", []))
-    cash = fundamentals.get("CashAndCashEquivalentsAtCarryingValue", [])
-    if debt and cash:
-        derived["net_debt_usd"] = (debt[0].get("val") or 0) - (cash[0].get("val") or 0)
-    equity = fundamentals.get("StockholdersEquity", [])
-    shares = (fundamentals.get("CommonStockSharesOutstanding", [])
-              or fundamentals.get("WeightedAverageNumberOfDilutedSharesOutstanding", []))
-    if equity and shares and shares[0].get("val"):
-        derived["book_value_per_share"] = (equity[0].get("val") or 0) / shares[0]["val"]
+
+    # ── helpers ─────────────────────────────────────────────────────
+    def v(key, idx=0):
+        return _v(fundamentals.get(key, []), idx)
+
+    def first(*keys):
+        """Return the first non-None value from the listed series."""
+        for k in keys:
+            val = v(k)
+            if val is not None:
+                return val
+        return None
+
+    # ── Cash flow items ──────────────────────────────────────────────
+    cfo   = v("NetCashProvidedByUsedInOperatingActivities")
+    capex = v("PaymentsToAcquirePropertyPlantAndEquipment")
+    if cfo is not None and capex is not None:
+        derived["fcf_ttm_usd"] = cfo - capex
+    if cfo is not None:
+        derived["cfo_usd"] = cfo
+    if capex is not None:
+        derived["capex_usd"] = capex
+
+    # ── Debt & cash ─────────────────────────────────────────────────
+    lt_debt  = first("LongTermDebt", "LongTermDebtNoncurrent")
+    st_debt  = first("LongTermDebtCurrent")
+    leases   = v("OperatingLeaseLiabilityNoncurrent")
+    cash     = first("CashAndCashEquivalentsAtCarryingValue")
+    st_inv   = v("ShortTermInvestments")
+
+    total_debt = (lt_debt or 0) + (st_debt or 0)
+    liquid     = (cash or 0) + (st_inv or 0)
+    if lt_debt is not None or st_debt is not None:
+        derived["total_debt_usd"] = total_debt
+    if cash is not None:
+        derived["cash_usd"] = cash
+    if liquid > 0:
+        derived["net_debt_usd"] = total_debt - liquid
+    # Adjusted net debt includes operating lease liabilities
+    if leases is not None and liquid > 0:
+        derived["adj_net_debt_usd"] = total_debt + (leases or 0) - liquid
+
+    # ── Equity / balance sheet ───────────────────────────────────────
+    equity     = v("StockholdersEquity")
+    goodwill   = v("Goodwill")
+    intangibles= v("IntangibleAssetsNetExcludingGoodwill")
+    assets     = v("Assets")
+    curr_assets= v("AssetsCurrent")
+    curr_liabs = v("LiabilitiesCurrent")
+    shares     = first("CommonStockSharesOutstanding",
+                       "WeightedAverageNumberOfDilutedSharesOutstanding")
+
+    if equity is not None and shares and shares > 0:
+        derived["book_value_per_share"] = equity / shares
+        gw  = goodwill   or 0
+        ia  = intangibles or 0
+        tbv = equity - gw - ia
+        derived["tangible_book_value_per_share"] = tbv / shares
+    if curr_assets is not None and curr_liabs is not None:
+        derived["working_capital_usd"] = curr_assets - curr_liabs
+        if curr_liabs > 0:
+            derived["current_ratio"] = round(curr_assets / curr_liabs, 3)
+
+    # ── Income statement ─────────────────────────────────────────────
+    ebit      = v("OperatingIncomeLoss")
+    ni        = v("NetIncomeLoss")
+    da        = v("DepreciationDepletionAndAmortization")
+    interest  = v("InterestExpense")
+    tax_exp   = v("IncomeTaxExpenseBenefit")
+
+    # EBITDA = EBIT + D&A (fallback: NI + tax + interest + D&A)
+    if ebit is not None and da is not None:
+        derived["ebitda_usd"] = ebit + da
+    elif ni is not None and da is not None:
+        adj = (tax_exp or 0) + abs(interest or 0)
+        derived["ebitda_usd"] = ni + adj + da
+
+    # Interest coverage = EBIT / |interest expense|
+    if ebit is not None and interest is not None and abs(interest) > 0:
+        derived["interest_coverage"] = round(ebit / abs(interest), 2)
+
+    # Effective tax rate = tax expense / pre-tax income
+    if ni is not None and tax_exp is not None:
+        pretax = ni + (tax_exp or 0)
+        if pretax != 0:
+            derived["effective_tax_rate_pct"] = round(tax_exp / pretax * 100, 2)
+
+    # ── Revenue CAGR (5-year) ─────────────────────────────────────────
     rev = (fundamentals.get("Revenues", [])
            or fundamentals.get("RevenueFromContractWithCustomerExcludingAssessedTax", []))
-    if len(rev) >= 5:
-        recent = rev[0].get("val")
-        oldest = rev[-1].get("val")
+    # Filter to annual (FY) filings only for CAGR stability
+    rev_fy = [r for r in rev if r.get("fp") == "FY"]
+    if len(rev_fy) >= 2:
+        recent = rev_fy[0].get("val")
+        oldest = rev_fy[-1].get("val")
         if recent and oldest and oldest > 0:
-            years = max(1, (rev[0].get("fy", 0) - rev[-1].get("fy", 0)))
+            years = max(1, (rev_fy[0].get("fy", 0) - rev_fy[-1].get("fy", 0)))
             if years > 0:
                 cagr = ((recent / oldest) ** (1 / years) - 1) * 100
                 derived["rev_5y_cagr_pct"] = round(cagr, 2)
+
     return derived
 
 
