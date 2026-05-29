@@ -176,6 +176,42 @@ def _v(series: list, idx: int = 0) -> float | None:
     return float(val) if val is not None and val == val else None  # guard NaN
 
 
+def _fy_latest(series: list) -> float | None:
+    """Return the most-recent FY (annual 10-K) value — for flow items like
+    Revenue, CFO, CapEx where a quarterly value is just 1/4 of the year."""
+    for row in series:
+        if row.get("fp") == "FY" and row.get("form") in ("10-K", "10-K/A"):
+            val = row.get("val")
+            if val is not None:
+                return float(val)
+    return None
+
+
+def _ttm(series: list) -> float | None:
+    """Compute Trailing-Twelve-Month value for a flow series by summing the
+    four most-recent UNIQUE quarterly entries.  Falls back to the latest FY if
+    fewer than 4 quarters are available (e.g. company just went public)."""
+    quarters = [r for r in series if r.get("fp") in ("Q1", "Q2", "Q3", "Q4")
+                and r.get("form") in ("10-Q", "10-Q/A")]
+    # Deduplicate by (fy, fp) — keep the latest filing for each period
+    seen, deduped = set(), []
+    for r in quarters:
+        key = (r.get("fy"), r.get("fp"))
+        if key not in seen:
+            seen.add(key)
+            deduped.append(r)
+    if len(deduped) >= 4:
+        total = 0.0
+        for r in deduped[:4]:
+            val = r.get("val")
+            if val is None:
+                return None
+            total += float(val)
+        return total
+    # Fall back to the latest annual figure
+    return _fy_latest(series)
+
+
 def derive_metrics(fundamentals: dict) -> dict:
     """Compute enriched derived metrics the dashboard consumes.
 
@@ -189,23 +225,39 @@ def derive_metrics(fundamentals: dict) -> dict:
     def v(key, idx=0):
         return _v(fundamentals.get(key, []), idx)
 
+    def ttm(key):
+        """TTM for a flow metric — sum of 4 quarters (or latest annual)."""
+        return _ttm(fundamentals.get(key, []))
+
+    def fy(key):
+        """Most-recent FY value."""
+        return _fy_latest(fundamentals.get(key, []))
+
     def first(*keys):
         """Return the first non-None value from the listed series."""
         for k in keys:
+            # For flow items (cash flow statement, income statement) use TTM;
+            # for balance sheet items use the latest point estimate.
             val = v(k)
             if val is not None:
                 return val
         return None
 
-    # ── Cash flow items ──────────────────────────────────────────────
-    cfo   = v("NetCashProvidedByUsedInOperatingActivities")
-    capex = v("PaymentsToAcquirePropertyPlantAndEquipment")
+    # ── Cash flow items (TTM — sum of 4 quarters, NOT just latest quarter) ──
+    # Using _ttm ensures we capture the full trailing year, not a single 10-Q.
+    cfo   = ttm("NetCashProvidedByUsedInOperatingActivities")
+    capex = ttm("PaymentsToAcquirePropertyPlantAndEquipment")
     if cfo is not None and capex is not None:
         derived["fcf_ttm_usd"] = cfo - capex
     if cfo is not None:
         derived["cfo_usd"] = cfo
     if capex is not None:
         derived["capex_usd"] = capex
+    # Store TTM income statement items too
+    ni_ttm   = ttm("NetIncomeLoss")
+    ebit_ttm = ttm("OperatingIncomeLoss")
+    if ni_ttm   is not None: derived["ni_ttm_usd"]   = ni_ttm
+    if ebit_ttm is not None: derived["ebit_ttm_usd"] = ebit_ttm
 
     # ── Debt & cash ─────────────────────────────────────────────────
     lt_debt  = first("LongTermDebt", "LongTermDebtNoncurrent")
@@ -247,12 +299,12 @@ def derive_metrics(fundamentals: dict) -> dict:
         if curr_liabs > 0:
             derived["current_ratio"] = round(curr_assets / curr_liabs, 3)
 
-    # ── Income statement ─────────────────────────────────────────────
-    ebit      = v("OperatingIncomeLoss")
-    ni        = v("NetIncomeLoss")
-    da        = v("DepreciationDepletionAndAmortization")
-    interest  = v("InterestExpense")
-    tax_exp   = v("IncomeTaxExpenseBenefit")
+    # ── Income statement (TTM for flow items) ────────────────────────
+    ebit      = ttm("OperatingIncomeLoss")
+    ni        = ttm("NetIncomeLoss")
+    da        = ttm("DepreciationDepletionAndAmortization")
+    interest  = ttm("InterestExpense")
+    tax_exp   = ttm("IncomeTaxExpenseBenefit")
 
     # EBITDA = EBIT + D&A (fallback: NI + tax + interest + D&A)
     if ebit is not None and da is not None:
@@ -271,11 +323,16 @@ def derive_metrics(fundamentals: dict) -> dict:
         if pretax != 0:
             derived["effective_tax_rate_pct"] = round(tax_exp / pretax * 100, 2)
 
-    # ── Revenue CAGR (5-year) ─────────────────────────────────────────
+    # ── Revenue (TTM for current-period accuracy) ────────────────────
     rev = (fundamentals.get("Revenues", [])
            or fundamentals.get("RevenueFromContractWithCustomerExcludingAssessedTax", []))
-    # Filter to annual (FY) filings only for CAGR stability
-    rev_fy = [r for r in rev if r.get("fp") == "FY"]
+    rev_ttm = (_ttm(rev) or _fy_latest(rev))
+    if rev_ttm is not None:
+        derived["rev_ttm_usd"] = rev_ttm
+
+    # ── Revenue CAGR (5-year, FY only for stability) ─────────────────
+    # Use FY-only rows for CAGR — avoids TTM distortion across year boundaries
+    rev_fy = [r for r in rev if r.get("fp") == "FY" and r.get("form") in ("10-K", "10-K/A")]
     if len(rev_fy) >= 2:
         recent = rev_fy[0].get("val")
         oldest = rev_fy[-1].get("val")
