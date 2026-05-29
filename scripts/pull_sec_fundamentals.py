@@ -49,10 +49,12 @@ from pathlib import Path
 import requests
 
 SEC_BASE = "https://data.sec.gov"
-SEC_UA = os.environ.get("SEC_UA")
+SEC_UA = os.environ.get("SEC_UA", "").strip()
 if not SEC_UA:
     print("FATAL: SEC_UA environment variable required (e.g. 'FVD/1.0 you@email.com')")
+    print("  Set it as a GitHub Actions secret named SEC_UA in the repo settings.")
     sys.exit(1)
+print(f"Using SEC_UA (length={len(SEC_UA)})")
 
 HEADERS = {"User-Agent": SEC_UA, "Accept-Encoding": "gzip, deflate"}
 
@@ -176,9 +178,17 @@ def main():
         print("usage: pull_sec_fundamentals.py <tickers.txt> <out.json>")
         sys.exit(1)
     in_path, out_path = sys.argv[1], sys.argv[2]
+    if not Path(in_path).exists():
+        print(f"FATAL: tickers file not found: {in_path}")
+        sys.exit(1)
     tickers = [line.strip().upper() for line in Path(in_path).read_text().splitlines() if line.strip() and not line.startswith("#")]
+    print(f"Tickers to process: {len(tickers)} — {tickers}")
     print(f"Loading CIK map …")
-    cik_map = load_cik_map()
+    try:
+        cik_map = load_cik_map()
+    except Exception as e:
+        print(f"FATAL: could not load SEC CIK map: {e}")
+        sys.exit(1)
     bundle = {}
     now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for i, ticker in enumerate(tickers):

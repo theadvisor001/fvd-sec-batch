@@ -31,9 +31,22 @@ jobs:
       - name: Install deps
         run: pip install requests
 
+      # ── Diagnostic: verify secret is wired up ──────────────────────────────
+      - name: Verify SEC_UA secret
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}
+        run: |
+          if [ -z "$SEC_UA" ]; then
+            echo "❌ FATAL: SEC_UA secret is empty or not set!"
+            echo "   Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            echo "   Add a secret named SEC_UA with value: FVD/1.0 theadvisor001@gmail.com"
+            exit 1
+          fi
+          echo "✅ SEC_UA is set (length=${#SEC_UA})"
+
       - name: Pull SEC fundamentals
         env:
-          SEC_UA: ${{ secrets.SEC_UA }}      # e.g. "FVD/1.0 you@email.com" — required by SEC
+          SEC_UA: ${{ secrets.SEC_UA }}
         run: python scripts/pull_sec_fundamentals.py tickers.txt data/fundamentals.json
 
       - name: Commit and push the bundle
