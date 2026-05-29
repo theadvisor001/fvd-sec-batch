@@ -82,8 +82,9 @@ GAAP_CONCEPTS = [
 
 
 def load_cik_map() -> dict:
-    """SEC publishes a master ticker → CIK mapping at company_tickers.json."""
-    r = requests.get(f"{SEC_BASE}/files/company_tickers.json", headers=HEADERS, timeout=30)
+    """SEC publishes a master ticker → CIK mapping at company_tickers.json.
+    Note: this file lives at www.sec.gov, not data.sec.gov."""
+    r = requests.get("https://www.sec.gov/files/company_tickers.json", headers=HEADERS, timeout=30)
     r.raise_for_status()
     raw = r.json()
     out = {}
