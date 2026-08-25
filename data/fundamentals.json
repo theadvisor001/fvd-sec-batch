@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generated_at": "2026-08-24T07:38:20+00:00",
+  "generated_at": "2026-08-25T07:25:36+00:00",
   "tickers": {
     "MA": {
       "cik": 1141391,
       "name": "Mastercard Inc",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -2799,7 +2799,7 @@
     "V": {
       "cik": 1403161,
       "name": "VISA INC.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -5094,7 +5094,7 @@
     "AAPL": {
       "cik": 320193,
       "name": "Apple Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -8347,7 +8347,7 @@
     "MSFT": {
       "cik": 789019,
       "name": "MICROSOFT CORP",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -11781,7 +11781,7 @@
     "GOOGL": {
       "cik": 1652044,
       "name": "Alphabet Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -15075,7 +15075,7 @@
     "META": {
       "cik": 1326801,
       "name": "Meta Platforms, Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -18079,7 +18079,7 @@
     "AMZN": {
       "cik": 1018724,
       "name": "AMAZON COM INC",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -21016,7 +21016,7 @@
     "NVDA": {
       "cik": 1045810,
       "name": "NVIDIA CORP",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -24437,7 +24437,7 @@
     "JPM": {
       "cik": 19617,
       "name": "JPMORGAN CHASE & CO",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -26087,7 +26087,7 @@
     "JNJ": {
       "cik": 200406,
       "name": "JOHNSON & JOHNSON",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -29018,7 +29018,7 @@
     "XOM": {
       "cik": 2115436,
       "name": "ExxonMobil Holdings Corp",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -29355,7 +29355,7 @@
     "KO": {
       "cik": 21344,
       "name": "COCA COLA CO",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -32294,7 +32294,7 @@
     "ADBE": {
       "cik": 796343,
       "name": "ADOBE INC.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -35503,7 +35503,7 @@
     "CRM": {
       "cik": 1108524,
       "name": "Salesforce, Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -38867,7 +38867,7 @@
     "NFLX": {
       "cik": 1065280,
       "name": "NETFLIX INC",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -41920,7 +41920,7 @@
     "TSLA": {
       "cik": 1318605,
       "name": "Tesla, Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -45354,7 +45354,7 @@
     "BAC": {
       "cik": 70858,
       "name": "BANK OF AMERICA CORP /DE/",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -47502,7 +47502,7 @@
     "PG": {
       "cik": 80424,
       "name": "PROCTER & GAMBLE Co",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -50238,7 +50238,7 @@
     "WMT": {
       "cik": 104169,
       "name": "Walmart Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -52805,7 +52805,7 @@
     "HD": {
       "cik": 354950,
       "name": "HOME DEPOT, INC.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
@@ -55707,7 +55707,7 @@
     "UNH": {
       "cik": 731766,
       "name": "UNITEDHEALTH GROUP INC",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -58444,7 +58444,7 @@
     "LLY": {
       "cik": 59478,
       "name": "ELI LILLY & Co",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -61111,7 +61111,7 @@
     "CVX": {
       "cik": 93410,
       "name": "CHEVRON CORP",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "Revenues": [
           {
@@ -63382,7 +63382,7 @@
     "AVGO": {
       "cik": 1730168,
       "name": "Broadcom Inc.",
-      "fetched_at": "2026-08-24T07:38:20+00:00",
+      "fetched_at": "2026-08-25T07:25:36+00:00",
       "fundamentals": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": [
           {
